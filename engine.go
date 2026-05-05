@@ -34,6 +34,12 @@ func NewRouter() *Engine {
 	return engine
 }
 
+func DefaultRouter() *Engine {
+	engine := NewRouter()
+	engine.Use(Recovery(), Logger())
+	return engine
+}
+
 func (rg *RouterGroup) Group(prefix string, middlewares ...HandlerFunc) *RouterGroup {
 	newMiddlewares := make([]HandlerFunc, len(rg.middlewares), len(rg.middlewares)+len(middlewares))
 	copy(newMiddlewares, rg.middlewares)
