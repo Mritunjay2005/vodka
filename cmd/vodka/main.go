@@ -70,7 +70,7 @@ func main() {
 					timer.Stop()
 				}
 				timer = time.AfterFunc(500*time.Millisecond, func() {
-					log.Printf("File changed: %s. Rebuilding...\n", event.Name)
+					log.Printf(Yellow+"File changed: %s. Rebuilding...\n"+Reset, event.Name)
 					buildAndRun()
 				})
 			}
@@ -78,14 +78,14 @@ func main() {
 			if !ok {
 				return
 			}
-			log.Println("Watcher Error: ", err)
+			log.Println(Red+"Watcher Error: "+Reset, err)
 		}
 	}
 }
 
 func buildAndRun() {
 	if appCmd != nil && appCmd.Process != nil {
-		log.Println("Stopping old process...")
+		log.Println(Gray + "Stopping old process..." + Reset)
 		appCmd.Process.Kill()
 		appCmd.Wait()
 	}
@@ -100,7 +100,7 @@ func buildAndRun() {
 	buildCmd.Stderr = os.Stderr
 
 	if err := buildCmd.Run(); err != nil {
-		log.Println("Build failed. Waiting for changes...")
+		log.Println(Red + "Build failed. Waiting for changes..." + Reset)
 		return
 	}
 
@@ -110,9 +110,9 @@ func buildAndRun() {
 	appCmd.Stderr = os.Stderr
 
 	if err := appCmd.Start(); err != nil {
-		log.Println("Failed to start app:", err)
+		log.Println(Red+"Failed to start app:"+Reset, err)
 		return
 	}
 
-	log.Println("App is running!")
+	log.Println(Green + "App is running!" + Reset)
 }
