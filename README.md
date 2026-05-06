@@ -14,63 +14,117 @@ __/\\\________/\\\_______/\\\\\_______/\\\\\\\\\\\\_____/\\\________/\\\_____/\\
 
 **The ultra-fast, no-botanical-nonsense HTTP framework for Go.**
 
-Vodka is a lightweight, high-performance web framework built to make Go HTTP servers ergonomic and incredibly fast. It strips away the bloat and provides exactly what you need: a blazing-fast radix tree router, a clean context wrapper, seamless middleware chaining, and a built-in hot-reloading development environment.
+Vodka is a lightweight, high-performance web framework built to make Go HTTP servers ergonomic and incredibly fast. It strips away the bloat and provides exactly what you need: a blazing-fast radix tree router, a clean context wrapper, seamless middleware chaining, and a **powerful built-in CLI for instantly generating and running full-stack React applications.**
 
-## Installation
+## Installation: The Vodka CLI
 
-Vodka comes in two parts: the framework itself, and a powerful CLI tool for local development.
-
-1. Install the Framework
-
-Run this inside your Go project to add Vodka to your go.mod:
+To get the full Vodka experience, you first need to install the CLI tool globally. This tool acts as your project generator and dev-server supervisor.
 
 ```bash
-go get github.com/DevanshuTripathi/vodka
+go install https://github.com/DevanshuTripathi/vodka/cmd/vodka@latest
 ```
 
-2. Install the Hot-Reload CLI
+**Important Note:** Ensure your Go bin directory is added to your system's PATH, otherwise your terminal won't recognize the vodka command.
+- **Mac/Linux:** Add export PATH=$PATH:$(go env GOPATH)/bin to your ~/.bashrc or ~/.zshrc.
+- **Windows:** Ensure %USERPROFILE%\go\bin is added to your Environment Variables.
 
-The Vodka CLI acts as a supervisor process, watching your .go files and automatically rebuilding and restarting your server whenever you save.
+## Building Full-Stack Apps
+
+Vodka is designed to bridge the gap between Go backends and modern single-page applications. You can spin up a complete Full-Stack environment (Vodka + React Vite) in seconds.
+
+1. **Create a Project**
+
+Run the following command to scaffold a new project:
+
+```bash
+vodka create my-app
+```
+
+This instantly generates:
+
+- A ready-to-use Go backend with Vodka installed.
+
+- A lightning-fast Vite + React frontend.
+
+- Pre-configured routing to seamlessly serve your React app from the Go backend in production.
+
+2. **Install Dependencies**
+
+Navigate into your new project and install the frontend packages:
+
+```bash
+cd my-app
+cd frontend && npm install
+cd ..
+```
+
+2. **Run the Dev Environment**
+
+Forget running multiple terminals. The Vodka CLI manages everything for you:
+
+```bash
+vodka run dev
+```
+
+This command concurrently starts the Vite Hot-Module-Replacement (HMR) server for your React frontend and the Vodka hot-reload watcher for your Go backend. Edit a .jsx file, the browser updates instantly. Edit a .go file, the backend rebuilds in milliseconds.
+
+## Using Vodka as a Standalone API
+
+If you are just building a REST API or microservice without a React frontend, Vodka is still the perfect tool.
+
+**Installing**
+
+Install the vodka CLI
 
 ```bash
 go install github.com/DevanshuTripathi/vodka/cmd/vodka@latest
 ```
 
-Important Note: Ensure your Go bin directory is added to your system's PATH, otherwise your terminal won't recognize the vodka command.
-Mac/Linux: Add export PATH=$PATH:$(go env GOPATH)/bin to your ~/.bashrc or ~/.zshrc.
-Windows: Ensure %USERPROFILE%\go\bin is added to your Environment Variables.
+Init a Go module and install vodka
 
-## Quickstart
-Here is a minimal, fully functional Vodka application:
+```bash
+mkdir backend-app
+cd backend-app
+go mod init app
+go get github.com/DevanshuTripathi/vodka
+```
+
+**Hot-Reloading your API**
+
+Inside any standard Go module using Vodka, simply type:
+
+```bash
+vodka
+```
+
+The CLI will compile your app into a temporary binary, start the server, and automatically rebuild and restart it whenever you save a .go file.
+
+**Minimal Backend Example**
+
+Here is a fully functional Vodka application:
 
 ```Go
 package main
 
 import (
-	"log"
-	"https://github.com/DevanshuTripathi/vodka"
+    "log"
+    "https://github.com/DevanshuTripathi/vodka"
 )
 
 func main() {
-	// Initialize a new Vodka engine
-	app := vodka.New()
+    // Initialize a new Vodka engine with default logging/recovery middleware
+    app := vodka.Default()
 
-	// Define a simple GET route
-	app.GET("/ping", func(c *vodka.Context) {
-		c.String(200, "pong! 🏓")
-	})
+    // Define a simple GET route
+    app.GET("/ping", func(c *vodka.Context) {
+        c.JSON(200, vodka.M{"message": "pong! 🏓"})
+    })
 
-	// Start the server on port 8080
-	if err := app.Run(":8080"); err != nil {
-		log.Fatalf("Server crashed: %v", err)
-	}
+    // Start the server on port 8080
+    if err := app.Run(":8080"); err != nil {
+        log.Fatalf("Server crashed: %v", err)
+    }
 }
-```
-
-To run this in development with hot-reloading, simply open your terminal in the project directory and type:
-
-```bash
-vodka
 ```
 
 ## What Everything Does (Architecture)
@@ -83,9 +137,11 @@ At its core, vodka.Engine is a highly optimized router powered by httprouter und
 
 vodka.Context is the central struct passed to all your handlers. It wraps Go's standard http.Request and http.ResponseWriter into a single, clean object and provides quality-of-life helper methods.
 
-1. c.JSON(statusCode, obj): Automatically sets the content type and encodes your Go structs into JSON.
+- c.JSON(statusCode, obj): Automatically sets the content type and encodes your Go structs into JSON.
 
-2. c.String(statusCode, text): Sends plain text responses instantly.
+- c.String(statusCode, text): Sends plain text responses instantly.
+
+- c.BindJSON(&obj): Instantly parses incoming request bodies into your custom Go structs.
 
 ### Mixers (Middleware)
 
@@ -114,14 +170,6 @@ func Logger() vodka.HandlerFunc {
 app.Use(Logger())
 ```
 
-### The CLI(vodka dev)
+**Full-Stack Routung(ServeSPA)**
 
-Go is a compiled language, meaning you can't normally hot-reload code in memory. The vodka CLI solves this by tapping into the OS file system (fsnotify).
-When you run vodka, it:
-1. Compiles your app into a temporary binary (tmp/vodka-build).
-
-2. Starts the server.
-
-3. Listens for changes to any .go files.
-
-4. If a change is detected, it gracefully kills the process, rebuilds the binary, and starts it back up in milliseconds.
+When you use vodka create, your backend comes with app.ServeSPA("./frontend/dist") pre-configured. This acts as a smart fallback handler: if a user requests a route that isn't a registered API endpoint, Vodka will automatically serve your React index.html, allowing React Router to handle client-side navigation flawlessly without throwing 404s on page refresh.
