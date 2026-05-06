@@ -5,22 +5,27 @@ import "net/http"
 func AllowCORS(origins []string) HandlerFunc {
 	return func(c *Context) {
 		clientOrigin := c.Request.Header.Get("Origin")
-		isAllowed := false
+		allowThisOrigin := ""
 
 		for _, o := range origins {
 			if o == "*" || o == clientOrigin {
-				isAllowed = true
+				allowThisOrigin = clientOrigin
 
-				c.Writer.Header().Set("Access-Control-Allow-Origin", clientOrigin)
-				c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-				c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-
+				if o == "*" {
+					allowThisOrigin = "*"
+				}
 				break
 			}
 		}
 
+		if allowThisOrigin != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", allowThisOrigin)
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		}
+
 		if c.Request.Method == http.MethodOptions {
-			if isAllowed {
+			if allowThisOrigin != "" {
 				c.Writer.WriteHeader(http.StatusNoContent) // 204: All good, proceed!
 			} else {
 				c.Writer.WriteHeader(http.StatusForbidden) // 403: Origin not allowed
