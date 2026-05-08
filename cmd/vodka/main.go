@@ -99,16 +99,16 @@ func runDev() {
 		}
 	}()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	watchBackend()
 }
 
 func createProject(name string) {
-	fmt.Printf(Cyan+"🍸 Distilling your project: %s...\n"+Reset, name)
+	fmt.Printf(Cyan+"Distilling your project: %s...\n"+Reset, name)
 
 	os.Mkdir(name, 0755)
 
-	fmt.Println(Gray + "🚀 Initializing Go backend..." + Reset)
+	fmt.Println(Gray + "Initializing Go backend..." + Reset)
 	runCmd(name, "go", "mod", "init", name)
 	runCmd(name, "go", "get", "github.com/DevanshuTripathi/vodka@latest")
 
@@ -116,28 +116,56 @@ func createProject(name string) {
 
 import (
 	"github.com/DevanshuTripathi/vodka"
+	"` + name + `/routes"
 )
 
 func main() {
-	app := vodka.DefaultRouter()
+	app := vodka.DefaultRouter() // Creates a Default Router with Logger and Recovery Middleware
 
 	allowedOrigins := []string{"http://localhost:5173"}
 
 	app.Use(vodka.AllowCORS(allowedOrigins))
 
-	api := app.Group("/api")
-	api.GET("/hello", func(c *vodka.Context) {
-		c.JSON(200, vodka.M{"message": "Hello from Vodka!"})
-	})
-
-	// Serve built React files in production
-	app.ServeSPA("./frontend/dist")
+	routes.Setup(app)
 
 	app.Run(":8080")
 }
 `
+	routesContent := `package routes
+
+import (
+	"github.com/DevanshuTripathi/vodka"
+	"` + name + `/controllers"
+)
+
+func Setup(app *vodka.Engine) {
+	app.GET("/ping", controllers.Pong)
+
+	app.GET("/hello/:name", controllers.Hello)
+}
+`
+	controllersContent := `package controllers
+
+import (
+	"github.com/DevanshuTripathi/vodka"
+)
+
+func Pong(c *vodka.Context) {
+	c.String(200, "Pong!")
+}
+
+func Hello(c *vodka.Context) {
+	name := c.Param("name")
+
+	c.String(200, "Hello "+ name +"!")
+}
+`
+	os.MkdirAll(filepath.Join(name, "controllers"), 0755)
+	os.MkdirAll(filepath.Join(name, "routes"), 0755)
 
 	os.WriteFile(filepath.Join(name, "main.go"), []byte(mainGoContent), 0644)
+	os.WriteFile(filepath.Join(name, "controllers", "ping.go"), []byte(controllersContent), 0644)
+	os.WriteFile(filepath.Join(name, "routes", "routes.go"), []byte(routesContent), 0644)
 
 	fmt.Println(Gray + "Spinning up React frontend with Vite..." + Reset)
 	if runtime.GOOS == "windows" {
@@ -146,7 +174,7 @@ func main() {
 		runCmd(name, "npm", "create", "vite@latest", "frontend", "--", "--template", "react")
 	}
 
-	fmt.Printf(Green+"\n✨ Project %s is ready!\n"+Reset, name)
+	fmt.Printf(Green+"\nProject %s is ready!\n"+Reset, name)
 	fmt.Printf("Next steps:\n  cd %s\n  cd frontend && npm install\n  cd ..\n  vodka run dev\n", name)
 }
 
