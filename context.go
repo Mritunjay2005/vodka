@@ -183,3 +183,8 @@ func (c *Context) String(statusCode int, text string) {
 	c.Writer.WriteHeader(statusCode)
 	c.Writer.Write([]byte(text))
 }
+
+// Helper to get request IP
+func (c *Context) IP() string {
+	return c.Request.RemoteAddr
+}
