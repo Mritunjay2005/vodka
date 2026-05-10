@@ -4,12 +4,15 @@ import (
 	"log"
 
 	"github.com/DevanshuTripathi/vodka"
+	"github.com/DevanshuTripathi/vodka/mixers"
 )
 
 func main() {
 	app := vodka.DefaultRouter() // Initialize a default router, comes with logger, recovery, error handling middlewares
 
-	app.Use()
+	limiter := mixers.NewRateLimiter(2.0, 10) // Initialize a new rate limiter with rate:2.0 and burst:10
+
+	app.Use(mixers.RateLimiter(limiter)) // Use the rate limiter middleware and pass the limiter
 
 	// GET function accepts the endpoint and a handler function
 	app.GET("/ping", func(c *vodka.Context) {
