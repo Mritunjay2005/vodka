@@ -318,8 +318,13 @@ go get github.com/DevanshuTripathi/vodka
 ## Run Backend Server
 
 ```bash
-go run .
+vodka
 ```
+Vodka automatically:
+
+- Watches `.go` files
+- Rebuilds your backend
+- Restarts the server instantly
 
 ---
 
@@ -478,6 +483,36 @@ func main() {
 
 ---
 
+## Request ID Middleware
+
+Track requests across your logs using automatic request ID generation. Every request gets a unique ID that's automatically added to response headers and stored in the context.
+
+```go
+app := vodka.DefaultRouter()
+
+// Add request ID middleware — generates unique ID for each request
+app.Use(mixers.RequestID())
+
+app.GET("/api/users", func(c *vodka.Context) {
+	requestID, _ := c.Get("request-id")
+	log.Printf("[%v] Fetching users", requestID)
+	c.JSON(200, vodka.M{"users": []string{"Alice", "Bob"}})
+})
+
+// Client receives: X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
+```
+
+### Custom Header Name
+
+Use a different header name if needed (context key is always `"request-id"`):
+
+```go
+app.Use(mixers.RequestIDWithHeader("X-Correlation-ID"))
+```
+
+---
+
+
 # Validation
 
 Vodka supports request validation using struct tags.
@@ -543,7 +578,7 @@ npm run build
 ## Build Backend
 
 ```bash
-go build .
+vodka
 ```
 
 ---
@@ -575,29 +610,7 @@ Vodka is designed around a few core ideas:
 
 Contributions, issues, and feature requests are welcome.
 
-## Local Development Setup
-
-```bash
-git clone https://github.com/DevanshuTripathi/vodka.git
-
-cd vodka
-
-go mod tidy
-```
-
-Create a new branch:
-
-```bash
-git checkout -b feature-name
-```
-
-Commit your changes:
-
-```bash
-git commit -m "docs: improve README and examples"
-```
-
-Push your branch and open a Pull Request.
+If you find bugs or have suggestions, feel free to open an issue or submit a pull request.
 
 ---
 
